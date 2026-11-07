@@ -1,0 +1,43 @@
+# Deploy the published invitations to GitHub Pages.
+#
+# This file belongs in the INVITATIONS repository (lahza-eg/invitations), not in the
+# LAHZA application repository. The studio commits invitation directories to this
+# repository; this workflow is what puts them on the web.
+#
+# It publishes the repository as-is. There is no build step: the studio has already
+# produced finished HTML, so nothing here needs Node, the templates or the database.
+name: Deploy to Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time. `cancel-in-progress: false` matters: publishing two
+# invitations in quick succession must not cancel the first one's deploy, or the
+# studio would be told a page is live when its commit never reached the web.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Package the site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
